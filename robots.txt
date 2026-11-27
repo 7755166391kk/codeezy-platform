@@ -1,7 +1,4 @@
 User-agent: *
 Allow: /
-Disallow: /dashboard
-Disallow: /project/
-Disallow: /settings
 
-Sitemap: /sitemap.xml
+Sitemap: https://7755166391kk.github.io/codeezy-platform/sitemap.xml
