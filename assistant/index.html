@@ -98,7 +98,8 @@ $('file').onchange=function(){var f=$('file').files[0];$('file').value='';if(!f)
 function clearImg(){img=null;$('thumb').classList.add('hidden');$('bImg').classList.remove('on')}
 /* web search: Arabic Wikipedia */
 $('bSearch').onclick=function(){useSearch=!useSearch;$('bSearch').classList.toggle('on',useSearch)};
-async function webSearch(q){try{var u='https://ar.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrsearch='+encodeURIComponent(q)+'&gsrlimit=3&prop=extracts|info&exintro=1&explaintext=1&exchars=700&inprop=url';var r=await fetch(u);var j=await r.json();var p=j.query&&j.query.pages;if(!p)return '';return Object.keys(p).map(function(k){return p[k]}).sort(function(a,b){return a.index-b.index}).map(function(x){return '- '+x.title+': '+(x.extract||'')+' ('+x.fullurl+')'}).join('\n')}catch(e){return ''}}
+var STOP=/^(ما|ماذا|هي|هو|من|متى|أين|اين|كيف|لماذا|هل|في|على|عن|إلى|الى|التي|الذي|و|ولماذا|وما|كم|اختيرت|ثم)$/;
+async function webSearch(q){try{q=q.replace(/[؟?!.,،]/g,' ').split(/\s+/).filter(function(w){return w&&!STOP.test(w)}).join(' ')||q;var u='https://ar.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrsearch='+encodeURIComponent(q)+'&gsrlimit=3&prop=extracts|info&exintro=1&explaintext=1&exchars=700&inprop=url';var r=await fetch(u);var j=await r.json();var p=j.query&&j.query.pages;if(!p)return '';return Object.keys(p).map(function(k){return p[k]}).sort(function(a,b){return a.index-b.index}).map(function(x){return '- '+x.title+': '+(x.extract||'')+' ('+x.fullurl+')'}).join('\n')}catch(e){return ''}}
 /* reminders (fire while the app is open) */
 var rems=[];try{rems=JSON.parse(localStorage.getItem('cdz_r')||'[]')}catch(e){}
 function saveR(){localStorage.setItem('cdz_r',JSON.stringify(rems))}
@@ -117,7 +118,7 @@ $('f').onsubmit=async function(e){e.preventDefault();var txt=$('t').value.trim()
  var myImg=img;clearImg();var shown=txt+(myImg?' [صورة مرفقة]':'');c.msgs.push({role:'user',text:shown});add('u',shown);var out=add('b','...'),acc='';
  try{var tk=await token();var ctx='';if(useSearch){out.textContent='أبحث في الويب...';ctx=await webSearch(txt)}
   var msgs=c.msgs.slice(-20).map(function(x){return{role:x.role==='user'?'user':'model',parts:[{text:x.text}]}});
-  var last=msgs[msgs.length-1];last.parts=[{text:(ctx?'نتائج بحث من ويكيبيديا العربية، استعن بها واذكر المصدر:\n'+ctx+'\n\nالسؤال: ':'')+txt}];if(myImg)last.parts.push({inlineData:{mimeType:'image/jpeg',data:myImg}});
+  var last=msgs[msgs.length-1];last.parts=[{text:(ctx?'نتائج بحث من ويكيبيديا العربية، استعن بها إن كانت ذات صلة بالسؤال واذكر المصدر، وإن لم تكن ذات صلة فتجاهلها تماماً وأجب من معرفتك دون ذكرها:\n'+ctx+'\n\nالسؤال: ':'')+txt}];if(myImg)last.parts.push({inlineData:{mimeType:'image/jpeg',data:myImg}});
   var body={systemInstruction:{parts:[{text:SYS}]},contents:msgs,generationConfig:{temperature:0.7,maxOutputTokens:4096,thinkingConfig:{thinkingLevel:'low'}}};
   var r=await fetch(URL_+'/functions/v1/gemini',{method:'POST',headers:{apikey:KEY,authorization:'Bearer '+tk,'content-type':'application/json'},body:JSON.stringify(body)});
   if(r.status===402)throw new Error('رصيدك انتهى. تواصل مع المالك لتفعيل اشتراكك.');
