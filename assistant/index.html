@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f0d0b"><title>مساعد كوديز</title>
+<style>
+:root{--bg:#0f0d0b;--panel:#1a1613;--line:#2c2520;--txt:#f4efe9;--mut:#a39a91;--a:#ff8a3d}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--txt);font-family:"Segoe UI",Tahoma,system-ui,sans-serif;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
+header{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+header h1{font-size:1.05rem;margin:0;flex:1}
+button{font:inherit;cursor:pointer}
+.ghost{background:none;border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:6px 12px}
+#msgs{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.m{max-width:88%;padding:10px 14px;border-radius:16px;line-height:1.8;white-space:pre-wrap;word-break:break-word}
+.u{align-self:flex-start;background:var(--a);color:#1b0f06;border-end-start-radius:4px}
+.b{align-self:flex-end;background:var(--panel);border:1px solid var(--line);border-end-end-radius:4px}
+.b code,.b pre{direction:ltr;text-align:left;background:#0b0907;border-radius:8px}.b pre{padding:10px;overflow:auto;white-space:pre}
+.empty{margin:auto;text-align:center;color:var(--mut);padding:20px}.empty h2{color:var(--txt)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:14px}
+.chips button{background:var(--panel);border:1px solid var(--line);color:var(--txt);border-radius:999px;padding:8px 14px}
+form.send{display:flex;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
+textarea{flex:1;resize:none;background:var(--panel);border:1px solid var(--line);color:var(--txt);border-radius:14px;padding:10px 12px;font:inherit;max-height:140px}
+.go{background:var(--a);border:0;border-radius:14px;color:#1b0f06;font-weight:700;padding:0 18px}
+.go:disabled{opacity:.5}
+#auth{margin:auto;width:min(92vw,380px);display:flex;flex-direction:column;gap:10px}
+#auth input{background:var(--panel);border:1px solid var(--line);color:var(--txt);border-radius:12px;padding:12px;font:inherit}
+#auth .err{color:#ff8f8f;min-height:1.3em;font-size:.9rem}
+.hidden{display:none!important}
+</style></head><body>
+<div id="authv" class="hidden" style="flex:1;display:flex">
+ <form id="auth"><h1 style="text-align:center">مساعد كوديز</h1>
+ <p style="text-align:center;color:var(--mut);margin:0">سجّل الدخول بحسابك في كوديز</p>
+ <input id="em" type="email" dir="ltr" placeholder="البريد الإلكتروني" required autocomplete="username">
+ <input id="pw" type="password" dir="ltr" placeholder="كلمة المرور" required minlength="6" autocomplete="current-password">
+ <div class="err" id="err"></div>
+ <button class="go" style="padding:12px" id="login">دخول</button>
+ <button class="ghost" type="button" id="signup">إنشاء حساب</button></form></div>
+<div id="chatv" class="hidden" style="flex:1;display:flex;flex-direction:column;min-height:0">
+ <header><h1>مساعد كوديز</h1><button class="ghost" id="new">محادثة جديدة</button><button class="ghost" id="out">خروج</button></header>
+ <div id="msgs"></div>
+ <form class="send" id="f"><textarea id="t" rows="1" placeholder="اكتب رسالتك..."></textarea><button class="go" id="s">إرسال</button></form>
+</div>
+<script>
+var URL_='https://ofrxahuwqvjbygvfigsd.supabase.co',KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mcnhhaHV3cXZqYnlndmZpZ3NkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTU3NTg5NzMsImV4cCI6MjExMTMzNDk3M30.NI6Jv-4XyPFl9pZmBiVdQfRKYqbFbldARQivffoQ4Oo';
+var SYS='أنت "مساعد كوديز"، مساعد ذكي يتحدث العربية الفصحى المبسطة واللهجة التي يكتب بها المستخدم. كن مباشراً ودقيقاً ودافئاً، أجب عن السؤال أولاً ثم أضف التفاصيل المفيدة، استخدم قوائم قصيرة عند الحاجة، واكتب الكود داخل كتل واضحة. لا تستخدم الرموز التعبيرية. إذا لم تكن متأكداً قل ذلك بصراحة ولا تختلق معلومات. لا تدّعِ أنك تصفحت الإنترنت أو نفّذت أفعالاً لا تستطيعها.';
+var $=function(i){return document.getElementById(i)};
+var sess=null,hist=[];
+try{sess=JSON.parse(localStorage.getItem('cdz_s')||'null');hist=JSON.parse(localStorage.getItem('cdz_h')||'[]')}catch(e){}
+function save(){try{localStorage.setItem('cdz_h',JSON.stringify(hist.slice(-60)));localStorage.setItem('cdz_s',JSON.stringify(sess))}catch(e){}}
+function show(){var ok=!!(sess&&sess.access_token);$('authv').classList.toggle('hidden',ok);$('chatv').classList.toggle('hidden',!ok);if(ok)render()}
+async function authCall(path,body){var r=await fetch(URL_+'/auth/v1/'+path,{method:'POST',headers:{apikey:KEY,'content-type':'application/json'},body:JSON.stringify(body)});var j=await r.json();if(!r.ok)throw new Error(j.msg||j.error_description||j.message||'error');return j}
+function setErr(m){$('err').textContent=m||''}
+async function enter(kind){setErr('');var b={email:$('em').value.trim(),password:$('pw').value};try{var j=kind==='in'?await authCall('token?grant_type=password',b):await authCall('signup',b);if(!j.access_token)throw new Error('لم يكتمل إنشاء الحساب');sess={access_token:j.access_token,refresh_token:j.refresh_token,at:Date.now(),exp:(j.expires_in||3600)*1000};save();show()}catch(e){setErr(/Invalid login/i.test(e.message)?'البريد أو كلمة المرور غير صحيحة.':/already/i.test(e.message)?'هذا البريد مسجل. اضغط دخول.':'تعذر الدخول: '+e.message)}}
+$('auth').onsubmit=function(e){e.preventDefault();enter('in')};$('signup').onclick=function(){enter('up')};
+$('out').onclick=function(){sess=null;save();show()};$('new').onclick=function(){hist=[];save();render()};
+async function token(){if(sess&&Date.now()-sess.at>sess.exp-120000&&sess.refresh_token){try{var j=await authCall('token?grant_type=refresh_token',{refresh_token:sess.refresh_token});sess={access_token:j.access_token,refresh_token:j.refresh_token,at:Date.now(),exp:(j.expires_in||3600)*1000};save()}catch(e){sess=null;save();show();throw e}}return sess.access_token}
+function esc(s){return s.replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})}
+function fmt(t){var parts=t.split('```');return parts.map(function(p,i){if(i%2){return '<pre>'+esc(p.replace(/^[a-zA-Z0-9+#-]*\n/,''))+'</pre>'}return esc(p).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/`([^`]+)`/g,'<code>$1</code>')}).join('')}
+function render(){var m=$('msgs');m.innerHTML='';if(!hist.length){m.innerHTML='<div class="empty"><h2>كيف أساعدك اليوم؟</h2><div class="chips"></div></div>';['اشرح لي فكرة بسهولة','ساعدني في كتابة رسالة','اقترح خطة لمشروع','اشرح لي كوداً برمجياً'].forEach(function(q){var b=document.createElement('button');b.type='button';b.textContent=q;b.onclick=function(){$('t').value=q;$('t').focus()};m.querySelector('.chips').appendChild(b)});return}hist.forEach(function(x){add(x.role==='user'?'u':'b',x.text)});m.scrollTop=m.scrollHeight}
+function add(c,t){var d=document.createElement('div');d.className='m '+c;d.innerHTML=c==='b'?fmt(t):esc(t);$('msgs').appendChild(d);$('msgs').scrollTop=$('msgs').scrollHeight;return d}
+var busy=false;
+$('f').onsubmit=async function(e){e.preventDefault();var txt=$('t').value.trim();if(!txt||busy)return;busy=true;$('s').disabled=true;$('t').value='';
+ if(!hist.length)$('msgs').innerHTML='';hist.push({role:'user',text:txt});add('u',txt);var out=add('b','...'),acc='';
+ try{var tk=await token();var body={systemInstruction:{parts:[{text:SYS}]},contents:hist.slice(-20).map(function(x){return{role:x.role==='user'?'user':'model',parts:[{text:x.text}]}}),generationConfig:{temperature:0.7,maxOutputTokens:4096,thinkingConfig:{thinkingLevel:'low'}}};
+  var r=await fetch(URL_+'/functions/v1/gemini',{method:'POST',headers:{apikey:KEY,authorization:'Bearer '+tk,'content-type':'application/json'},body:JSON.stringify(body)});
+  if(r.status===402)throw new Error('رصيدك انتهى. تواصل مع المالك لتفعيل اشتراكك.');
+  if(!r.ok)throw new Error('الخدمة مشغولة الآن، حاول بعد قليل.');
+  var rd=r.body.getReader(),dec=new TextDecoder(),buf='';
+  while(true){var n=await rd.read();if(n.done)break;buf+=dec.decode(n.value,{stream:true});var ls=buf.split('\n');buf=ls.pop();for(var i=0;i<ls.length;i++){var l=ls[i].trim();if(l.indexOf('data:')!==0)continue;try{var j=JSON.parse(l.slice(5));var ps=(j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts)||[];for(var k=0;k<ps.length;k++){if(ps[k].text&&!ps[k].thought){acc+=ps[k].text;out.innerHTML=fmt(acc);$('msgs').scrollTop=$('msgs').scrollHeight}}}catch(_){}}}
+  if(!acc)throw new Error('لم يصل رد. حاول مرة أخرى.');
+  hist.push({role:'model',text:acc});save()
+ }catch(err){out.innerHTML=esc(err.message||'حدث خطأ');out.style.color='#ffb199';hist.pop();save()}
+ busy=false;$('s').disabled=false};
+$('t').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey&&window.innerWidth>700){e.preventDefault();$('f').requestSubmit()}});
+show();
+</script></body></html>
