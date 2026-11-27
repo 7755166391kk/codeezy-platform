@@ -79,7 +79,7 @@ function render(){var m=$('msgs'),c=conv();m.innerHTML='';if(!c.msgs.length){m.i
 function add(c,t){var d=document.createElement('div');d.className='m '+c;d.innerHTML=c==='b'?fmt(t):esc(t);$('msgs').appendChild(d);$('msgs').scrollTop=$('msgs').scrollHeight;return d}
 function drawer(){var l=$('list');l.innerHTML='';convs.forEach(function(c){var d=document.createElement('div');d.className='it'+(c.id===cur?' cur':'');var s=document.createElement('span');s.textContent=c.title;s.onclick=function(){cur=c.id;save();render();$('drawer').classList.add('hidden')};var x=document.createElement('button');x.className='ghost';x.textContent='حذف';x.onclick=function(){convs=convs.filter(function(y){return y.id!==c.id});if(cur===c.id)cur=null;save();drawer();render()};d.appendChild(s);d.appendChild(x);l.appendChild(d)});if(!convs.length)l.innerHTML='<div style="color:var(--mut)">لا توجد محادثات محفوظة</div>'}
 $('menu').onclick=function(){drawer();$('drawer').classList.remove('hidden')};$('dClose').onclick=function(){$('drawer').classList.add('hidden')};
-function newChat(){cur=null;conv();save();render();$('drawer').classList.add('hidden')}
+function newChat(){convs=convs.filter(function(c){return c.msgs.length});cur=null;conv();save();render();$('drawer').classList.add('hidden')}
 $('new').onclick=newChat;$('dNew').onclick=newChat;
 $('auth').onsubmit=function(e){e.preventDefault();enter('in')};$('signup').onclick=function(){enter('up')};
 $('out').onclick=function(){sess=null;save();show()};
@@ -111,7 +111,7 @@ $('bBuild').onclick=async function(){var c=conv(),p=$('t').value.trim()||(c.msgs
   var r=await fetch(URL_+'/rest/v1/projects?select=id',{method:'POST',headers:{apikey:KEY,authorization:'Bearer '+tk,'content-type':'application/json',Prefer:'return=representation'},body:JSON.stringify({user_id:uid,name:p.split(/\s+/).slice(0,5).join(' ').slice(0,60),files:{}})});
   var j=await r.json();if(!r.ok||!j[0])throw new Error('فشل إنشاء المشروع');$('t').value='';
   var url=PLAT+'#/project/'+j[0].id+'?prompt='+encodeURIComponent(p);
-  var m=add('b','تم إنشاء مشروع جديد. افتح الرابط ليبدأ البناء تلقائياً (سجّل الدخول بنفس الحساب إن طُلب):\n'+url);c.msgs.push({role:'user',text:'ابنِ موقعاً: '+p},{role:'model',text:'تم إنشاء مشروع جديد. افتح الرابط ليبدأ البناء: '+url});save()}
+  var m=add('b','');m.innerHTML='تم إنشاء مشروع جديد. افتح الرابط ليبدأ البناء تلقائياً (سجّل الدخول بنفس الحساب إن طُلب):<br><a href="'+url+'" target="_blank" rel="noopener">افتح المشروع وابدأ البناء</a>';c.msgs.push({role:'user',text:'ابنِ موقعاً: '+p},{role:'model',text:'تم إنشاء مشروع جديد. افتح الرابط ليبدأ البناء: '+url});save()}
  catch(e){toast(e.message||'تعذر إنشاء المشروع')}};
 $('f').onsubmit=async function(e){e.preventDefault();var txt=$('t').value.trim();if((!txt&&!img)||busy)return;if(!txt)txt='صف هذه الصورة';busy=true;$('s').disabled=true;$('t').value='';
  var c=conv();if(!c.msgs.length){$('msgs').innerHTML='';c.title=txt.slice(0,30)}
